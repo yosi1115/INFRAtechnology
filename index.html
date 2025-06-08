@@ -112,7 +112,7 @@
 
         /* --- New Card Flip Gimmick --- */
         .card-container { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; perspective: 1000px; }
-        .card { width: 160px; height: 220px; position: relative; cursor: pointer; }
+        .card { width: 160px; height: 180px; position: relative; cursor: pointer; }
         .card-inner {
             position: absolute; width: 100%; height: 100%;
             transition: transform 0.6s; transform-style: preserve-3d;
@@ -374,15 +374,16 @@
         <div class="content-container text-center">
             <h2 class="text-3xl">🚀 Final Phase: Join Project</h2>
             <p class="mb-6">基本シミュレーションは完了した。君の能力は確認済みだ。<br>今度は、君が我々を評価する番だ。詳細なプロジェクトデータや、先輩技術者たちの活動記録にアクセスし、最終的な判断を下してほしい。</p>
-            <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
-                <a href="https://job.mynavi.jp/27/pc/search/corp82951/outline.html" target="_blank" class="btn" onclick="playItemSound()">プロジェクト本登録へ (マイナビ)</a>
-                <a href="https://www.instagram.com/infratec_recruit/" target="_blank" class="btn" onclick="playItemSound()">活動ログを見る (Instagram)</a>
+            <div class="flex flex-col lg:flex-row items-center justify-center gap-4 mb-8">
+                <a href="https://job.mynavi.jp/27/pc/search/corp82951/outline.html" target="_blank" class="btn text-sm" onclick="playItemSound()">プロジェクト本登録へ (マイナビ)</a>
+                <a href="https://recruit.infratec.co.jp/" target="_blank" class="btn text-sm" onclick="playItemSound()">企業採用サイト</a>
+                <a href="https://www.instagram.com/infratec_recruit/" target="_blank" class="btn text-sm" onclick="playItemSound()">活動ログを見る (Instagram)</a>
             </div>
             <div id="game-container">
                  <p class="text-sm mb-2">最終適性テスト: 精密ブロック配置</p>
                  <button id="start-game-btn" onclick="startGame()" class="text-blue-400 text-sm hover:underline">▶ テストを開始</button>
-                 <div id="game-wrapper" class="relative mx-auto" style="width: 300px; height: 600px;">
-                    <canvas id="game-canvas" width="300" height="600" class="absolute top-0 left-0"></canvas>
+                 <div id="game-wrapper" class="relative mx-auto" style="width: 250px; height: 450px;">
+                    <canvas id="game-canvas" width="250" height="450" class="absolute top-0 left-0"></canvas>
                     <div id="game-over-screen" class="hidden absolute inset-0 bg-black/70 flex-col justify-center items-center">
                          <p id="game-over-text" class="text-red-500 font-sf text-2xl mb-2"></p>
                          <p id="final-score" class="text-white font-sf text-xl mb-4"></p>
@@ -482,11 +483,8 @@
                             <p class='text-xs mt-2'>(タップで詳細)</p>
                         </div>
                         <div class='card-face card-back'>
-                            <ul class='list-none text-left space-y-1'>
-                                <li>月給: <strong class='text-yellow-300'>259,463円</strong></li>
-                                <li>基本月額: 224,400円</li>
-                                <li>職種手当: 35,063円</li>
-                            </ul>
+                            <p class='text-lg font-bold text-yellow-300'>259,463円</p>
+                            <p class='text-xs opacity-80 mt-2'>(基本月額224,400円 + 職種手当35,063円)</p>
                         </div>
                     </div>
                 </div>
@@ -497,11 +495,8 @@
                             <p class='text-xs mt-2'>(タップで詳細)</p>
                         </div>
                         <div class='card-face card-back'>
-                             <ul class='list-none text-left space-y-1'>
-                                <li>月給: <strong class='text-yellow-300'>248,594円</strong></li>
-                                <li>基本月額: 215,000円</li>
-                                <li>職種手当: 33,594円</li>
-                            </ul>
+                             <p class='text-lg font-bold text-yellow-300'>248,594円</p>
+                             <p class='text-xs opacity-80 mt-2'>(基本月額215,000円 + 職種手当33,594円)</p>
                         </div>
                     </div>
                 </div>
@@ -512,11 +507,8 @@
                             <p class='text-xs mt-2'>(タップで詳細)</p>
                         </div>
                         <div class='card-face card-back'>
-                             <ul class='list-none text-left space-y-1'>
-                                <li>月給: <strong class='text-yellow-300'>234,025円</strong></li>
-                                <li>基本月額: 202,400円</li>
-                                <li>職種手当: 31,625円</li>
-                            </ul>
+                              <p class='text-lg font-bold text-yellow-300'>234,025円</p>
+                             <p class='text-xs opacity-80 mt-2'>(基本月額202,400円 + 職種手当31,625円)</p>
                         </div>
                     </div>
                 </div>
@@ -546,7 +538,7 @@
         const miscDetails = `
              <div class='space-y-4'>
                 <div>
-                    <h4 class='font-bold text-blue-400'>  昇給・賞与</h4>
+                    <h4 class='font-bold text-blue-400'>📈 昇給・賞与</h4>
                     <p class='text-sm'>昇給：年1回(4月)<br>賞与：年2回(7月, 12月)</p>
                 </div>
             </div>
@@ -701,8 +693,8 @@
         const finalScoreText = document.getElementById('final-score');
         
         const COLS = 10;
-        const ROWS = 20;
-        const BLOCK_SIZE = 30;
+        const ROWS = 18; // Adjusted from 20
+        const BLOCK_SIZE = 25; // Adjusted from 30
         
         const COLORS = [null, '#ffab00', '#58a6ff', '#f778ba', '#3fb950', '#a371f7', '#d29922', '#c9d1d9'];
         const SHAPES = [
@@ -724,24 +716,6 @@
         let dropInterval = 1000; // ms
         let lastTime = 0;
         let animationFrameId;
-
-        function startGame() {
-            playItemSound();
-            startGameBtn.style.display = 'none';
-            gameOverScreen.style.display = 'none';
-            canvas.style.display = 'block';
-
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            
-            board.forEach(row => row.fill(0));
-            score = 0;
-            dropInterval = 1000;
-            gameOver = false;
-            piece = new Piece(ctx);
-            
-            lastTime = 0;
-            gameLoop(0);
-        }
         
         class Piece {
             constructor(ctx) {
@@ -840,54 +814,51 @@
             return newShape;
         }
         
-        function handleKeyDown(e) {
-            e.preventDefault();
-            const p = { ...piece };
-            if (e.key === "ArrowLeft")  p.x--;
-            if (e.key === "ArrowRight") p.x++;
-            if (e.key === "ArrowDown")  p.y++;
-            if (e.key === "ArrowUp") p.shape = rotate(p.shape);
-
-            if(isValid(p)){
-                piece.move(p);
-            }
-        }
-
-        // --- Touch controls ---
+        // --- Touch & Key controls ---
         let touchStartX = 0;
-        let touchStartY = 0;
-        let touchThreshold = 30; // Min pixels to count as a swipe
-
-        canvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        }, { passive: false });
-
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); touchStartX = e.touches[0].clientX; }, { passive: false });
+        canvas.addEventListener('touchmove', e => { e.preventDefault(); }, { passive: false });
         canvas.addEventListener('touchend', e => {
             e.preventDefault();
             const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
             const deltaX = touchEndX - touchStartX;
-            const deltaY = touchEndY - touchStartY;
 
-            if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) { // Tap
-                const p = { ...piece };
-                p.shape = rotate(p.shape);
-                if (isValid(p)) piece.move(p);
-            } else if (Math.abs(deltaX) > Math.abs(deltaY)) { // Horizontal swipe
+            if (Math.abs(deltaX) > 50) { // Horizontal Swipe
                 const p = { ...piece };
                 p.x += (deltaX > 0) ? 1 : -1;
                  if (isValid(p)) piece.move(p);
-            } else if (deltaY > touchThreshold) { // Downward swipe
+            } else { // Tap
                 const p = { ...piece };
-                p.y++;
+                p.shape = rotate(p.shape);
                 if (isValid(p)) piece.move(p);
             }
         }, { passive: false });
+        
+        // Added swipe down gesture
+        let touchStartY = 0;
+        canvas.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: false });
+        canvas.addEventListener('touchend', e => {
+             const touchEndY = e.changedTouches[0].clientY;
+             const deltaY = touchEndY - touchStartY;
+             if (deltaY > 50) { // Downward swipe
+                 pieceDrop();
+             }
+        }, { passive: false });
 
 
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keydown', (e) => {
+             const p = { ...piece };
+             if (e.key === "ArrowLeft")  p.x--;
+             else if (e.key === "ArrowRight") p.x++;
+             else if (e.key === "ArrowDown")  pieceDrop();
+             else if (e.key === "ArrowUp") p.shape = rotate(p.shape);
+             else return;
+
+             if(isValid(p)){
+                piece.move(p);
+             }
+             e.preventDefault();
+        });
 
         function gameLoop(time) {
             if (gameOver) {
@@ -939,4 +910,3 @@
     </script>
 </body>
 </html>
- 
