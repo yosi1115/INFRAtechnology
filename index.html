@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インフラテック株式会社 採用 | VR建設シミュレーター "INFRA-BUILD"</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #010409;
+            color: #c9d1d9;
+            overflow: hidden;
+        }
+
+        .font-sf { font-family: 'Orbitron', sans-serif; }
+
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease-in-out, visibility 0.8s;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden; /* For parallax effect */
+        }
+        
+        .page::before { /* Parallax background layer */
+            content: '';
+            position: absolute;
+            top: -50px; left: -50px; right: -50px; bottom: -50px;
+            background-image: radial-gradient(white 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+            opacity: 0.1;
+            transition: transform 0.2s linear;
+            z-index: -1;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        #page-1 { background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); }
+        #page-2, #page-3, #page-4, #page-5, #page-6, #page-7 { background-color: #010409; }
+
+        .content-container {
+            background: rgba(13, 17, 23, 0.85);
+            border: 1px solid #30363d;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            max-width: 900px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 0 25px rgba(88, 166, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #58a6ff;
+            text-shadow: 0 0 8px #58a6ff;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            background: rgba(88, 166, 255, 0.1);
+            color: #58a6ff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            border: 1px solid #30363d;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: rgba(88, 166, 255, 0.2);
+            border-color: #58a6ff;
+        }
+
+        .nav-buttons {
+            position: absolute;
+            bottom: 3%;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 2;
+        }
+        
+        #cursor { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- New Card Flip Gimmick --- */
+        .card-container { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; perspective: 1000px; }
+        .card { width: 160px; height: 220px; position: relative; cursor: pointer; }
+        .card-inner {
+            position: absolute; width: 100%; height: 100%;
+            transition: transform 0.6s; transform-style: preserve-3d;
+        }
+        .card.is-flipped .card-inner { transform: rotateY(180deg); }
+        .card-face {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            background: rgba(13, 17, 23, 0.95); border: 1px solid #30363d;
+            border-radius: 12px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 1rem;
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.2);
+        }
+        .card-back { transform: rotateY(180deg); font-size: 0.8rem; }
+        
+        /* --- Life Plan Simulator --- */
+        .benefit-item {
+            padding: 0.75rem;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border-left: 4px solid #30363d;
+            transition: all 0.3s ease;
+        }
+        .benefit-item.highlighted {
+            background-color: rgba(255, 171, 0, 0.1);
+            border-left-color: #ffab00;
+            transform: scale(1.02);
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: all .3s ease; z-index: 100;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: rgba(13, 17, 23, 0.95); border: 1px solid #30363d;
+            border-radius: 12px; padding: 2rem; max-width: 600px;
+            width: 90%; transform: scale(0.9); transition: all .3s ease;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+
+        .clickable { cursor: pointer; transition: background-color 0.2s; }
+        .clickable:hover { background-color: rgba(88, 166, 255, 0.05); }
+
+        .counter { font-size: 2.5rem; color: #58a6ff; }
+
+        #game-canvas { background-color: #0d1117; border: 1px solid #30363d; border-radius: 8px; display: block; }
+        #game-container { display: none; }
+        
+        .scholarship-box {
+            border: 2px solid #ffab00;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            background: linear-gradient(45deg, rgba(255, 171, 0, 0.1), rgba(255, 171, 0, 0));
+            box-shadow: 0 0 15px rgba(255, 171, 0, 0.3);
+        }
+
+        /* --- Audio Controls --- */
+        #audio-controls {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            background-color: rgba(13, 17, 23, 0.8);
+            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+        #volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 80px;
+            background: transparent;
+            cursor: pointer;
+        }
+        #volume-slider::-webkit-slider-runnable-track {
+            background: #30363d;
+            height: 4px;
+            border-radius: 2px;
+        }
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -6px;
+            background-color: #58a6ff;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Sound files -->
+    <audio id="nav-click-sound" src="https://www.dropbox.com/scl/fi/99lh15f066eg5pztjjq19/iivsvie06fp-mechanical-object-sfx-7.mp3?rlkey=vchmi9ip2ffp3iak26thqvtr4&st=vl5xdcx5&dl=1" preload="auto"></audio>
+    <audio id="item-click-sound" src="https://www.dropbox.com/scl/fi/wufihoifz2g3v6y3jmuly/.mp3?rlkey=pky56rn3cft0w8q5o3of7zdc1&st=60u0449p&dl=1" preload="auto"></audio>
+    <audio id="background-music" src="https://www.dropbox.com/scl/fi/o5jpcoqrg1zhb2lrev4ek/Music_fx_worldview__anticipationmusic_for_a.mp3?rlkey=vqpdjl6gr9x7iysynnowjymro&st=xa8gwsc5&dl=1" preload="auto" loop></audio>
+    
+    <!-- Audio Controls -->
+    <div id="audio-controls">
+        <button id="mute-btn" class="text-blue-400 hover:text-white transition-colors"></button>
+        <input type="range" id="volume-slider" min="0" max="100" value="50">
+    </div>
+
+    <!-- Page 1: Login Screen -->
+    <div id="page-1" class="page active">
+        <div class="text-left font-sf text-green-400 font-mono w-full max-w-2xl p-4">
+            <div id="login-text"></div>
+            <span id="cursor">_</span>
+        </div>
+    </div>
+
+    <!-- Page 2: Project Briefing -->
+    <div id="page-2" class="page">
+        <div class="content-container">
+            <h2 class="text-3xl">📝 Phase 1: Project Briefing</h2>
+            <p class="mb-4">ようこそ、候補生。君が参加するプロジェクトは、<strong class="text-yellow-300">プレキャストコンクリート技術</strong>を用い、持続可能な未来都市を建設する国家規模のシミュレーションだ。</p>
+            <p class="mb-4">我々インフラテックは、単なる<strong class="text-yellow-300">「部品メーカー」</strong>ではない。M&Aによる技術統合を経て、都市建設に関わるあらゆる課題を解決する<strong class="text-yellow-300">「インフラ関連事業の複合企業体（総合商社）」</strong>として、このプロジェクトを主導している。</p>
+            <p>70年に渡る我々の経験と技術のすべてが、このシミュレーションには実装されている。</p>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="playNavSound(); changePage(1)" class="btn">＜ ログアウト</button>
+            <button onclick="playNavSound(); changePage(3)" class="btn">次のフェーズへ ＞</button>
+        </div>
+    </div>
+    
+    <!-- Page 3: Role Selection -->
+    <div id="page-3" class="page">
+        <div class="content-container">
+            <h2 class="text-3xl">🧑‍🚀 Phase 2: Role Selection</h2>
+            <p class="mb-6">都市建設には、様々な専門家（ロール）の協力が不可欠だ。君の適性に応じて、最適なロールを選択してくれ。（項目をクリックで詳細表示）</p>
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+                <div class="p-4 bg-black/20 rounded border-l-2 border-blue-400 clickable" onclick="openModal('✍️ 技術職（設計・開発）', 'CADを駆使し、未来のスタンダードとなる製品の設計図を描く部署。お客様の要望に応え、時には現場へ足を運び、「現場・現物・現実」の三現主義で最適な形を追求します。PCの向こう側にいる人々の安全で快適な暮らしのために、部署一丸となって「今」を更新し続ける、創造性豊かな仕事です。')">
+                    <h3 class="font-sf text-blue-400 text-lg">技術職（設計・開発）</h3>
+                </div>
+                 <div class="p-4 bg-black/20 rounded border-l-2 border-blue-400 clickable" onclick="openModal('🏭 技術職（工場管理）', '生産拠点である「ファクトリー」で、生産計画から品質管理、人員配置までを担い、高品質な製品の安定生産を支える部署。お客様、共に働く仲間、先輩など、インフラテックの中心にいる「人」を大切にすることが求められます。将来的にはSDGsなど、より広い視野も必要となる、ものづくりの要です。')">
+                    <h3 class="font-sf text-blue-400 text-lg">技術職（工場管理）</h3>
+                </div>
+                <div class="p-4 bg-black/20 rounded border-l-2 border-blue-400 clickable" onclick="openModal('🤝 営業職', '顧客との信頼関係を築き、私たちの技術を社会の隅々へ届ける部署。ただ製品を売るだけでなく、現場へ足を運び、お客様の真の課題を理解することから始まります。自分が提案した製品が街の一部となり、人々の生活を支えている実感を得られる、やりがいの大きな仕事です。')">
+                    <h3 class="font-sf text-blue-400 text-lg">営業職</h3>
+                </div>
+                <div class="p-4 bg-black/20 rounded border-l-2 border-blue-400 clickable" onclick="openModal('🏗️ 技術職（施工管理）', '建設の最前線に立ち、「品質・コスト・工程・安全」の4大管理を担うプロジェクトの指揮官。「コミュニケーションを取りやすい職場」という言葉通り、職人さんや関係者と密に連携し、プロジェクトを完成へと導きます。大きな責任が伴いますが、構造物が完成した時の達成感は格別です。')">
+                    <h3 class="font-sf text-blue-400 text-lg">技術職（施工管理）</h3>
+                </div>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="playNavSound(); changePage(2)" class="btn">＜ 戻る</button>
+            <button onclick="playNavSound(); changePage(4)" class="btn">次のフェーズへ ＞</button>
+        </div>
+    </div>
+
+    <!-- Page 4: Skill Tree -->
+    <div id="page-4" class="page">
+        <div class="content-container">
+            <h2 class="text-3xl">🌱 Phase 3: Skill Tree</h2>
+            <p class="mb-6">候補生は、以下のプログラムを通じてスキルを習得し、成長していく。（項目をクリックで詳細表示）</p>
+            <ul class="list-none space-y-4">
+                <li class="p-3 bg-black/20 rounded clickable" onclick="openModal('🎓 Lv.1 スキルインストール // 新人研修', '入社後2週間の集中プログラム。1週目は役員講話やビジネスマナー、企業理念などを学び、2週目は工場で製品製造の現場を体験。基礎からしっかりサポートします。')"><strong class="font-sf text-blue-400">Lv.1 スキルインストール // 新人研修</strong></li>
+                <li class="p-3 bg-black/20 rounded clickable" onclick="openModal('🔧 Lv.10 スキルアップグレード // OJT・専門研修', '配属先で先輩技術者の指導のもと実務を経験(OJT)。メンター制度もあり、安心して業務を覚えられます。営業、事務、管理職など、各分野の専門性を高めるための研修も随時実施し、継続的なスキルアップが可能です。')"><strong class="font-sf text-blue-400">Lv.10 スキルアップグレード // OJT・専門研修</strong></li>
+                <li class="p-3 bg-black/20 rounded clickable" onclick="openModal('📜 Lv.20 ライセンス取得 // 資格取得支援', '「現状維持は退化」の理念のもと、挑戦を全力で支援。業務に必要な資格取得の費用補助はもちろん、難関資格取得者には最大<strong class=text-yellow-300>10万円</strong>のお祝い金と、月々の資格手当（最大<strong class=text-yellow-300>2万円</strong>）も支給します。')"><strong class="font-sf text-blue-400">Lv.20 ライセンス取得 // 資格取得支援</strong></li>
+            </ul>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="playNavSound(); changePage(3)" class="btn">＜ 戻る</button>
+            <button onclick="playNavSound(); changePage(5)" class="btn">次のフェーズへ ＞</button>
+        </div>
+    </div>
+    
+    <!-- Page 5: System Parameters -->
+    <div id="page-5" class="page">
+        <div class="content-container">
+            <h2 class="text-3xl">📊 Phase 4: System Parameters</h2>
+             <p class="mb-6">シミュレーション環境（労働環境）の各種パラメータを開示する。</p>
+             <!-- Animated Data Section -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-8">
+                <div>
+                    <div class="font-sf counter text-3xl text-blue-400" data-target="125">0</div>
+                    <div class="text-sm mt-1">年間休日 (日)</div>
+                </div>
+                <div>
+                    <div class="font-sf counter text-3xl text-blue-400" data-target="13.6">0</div>
+                    <div class="text-sm mt-1">平均勤続年数 (年)</div>
+                </div>
+                <div>
+                    <div class="font-sf counter text-3xl text-blue-400" data-target="7">0</div>
+                    <div class="text-sm mt-1">月平均残業時間 (時間)</div>
+                </div>
+                 <div>
+                    <div class="font-sf counter text-3xl text-blue-400" data-target="92.3">0</div>
+                    <div class="text-sm mt-1">新卒3年以内定着率 (%)</div>
+                </div>
+            </div>
+             <!-- Clickable Details Section -->
+             <div class="pt-6 border-t border-blue-500/30">
+                <h3 class="font-sf text-xl text-blue-300 mb-4 text-center">詳細パラメータ表示</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                    <div class="p-3 bg-black/20 rounded clickable" onclick="openModal('💰 初任給', salaryDetails)">
+                        <div class="font-sf text-lg text-blue-300">初任給</div>
+                    </div>
+                    <div class="p-3 bg-black/20 rounded clickable" onclick="openModal('🛠️ 諸手当', allowanceDetails)">
+                        <div class="font-sf text-lg text-blue-300">諸手当</div>
+                    </div>
+                     <div class="p-3 bg-black/20 rounded clickable" onclick="openModal('📈 昇給・賞与', miscDetails)">
+                        <div class="font-sf text-lg text-blue-300">昇給・賞与</div>
+                    </div>
+                    <div class="p-3 bg-black/20 rounded clickable" onclick="openModal('🗺️ 勤務地手当', locationAllowanceDetails)">
+                        <div class="font-sf text-lg text-blue-300">勤務地手当</div>
+                    </div>
+                     <div class="p-3 bg-black/20 rounded clickable" onclick="openModal('🌴 休日休暇', holidayDetails)">
+                        <div class="font-sf text-lg text-blue-300">休日休暇</div>
+                    </div>
+                    <div class="p-3 bg-black/20 rounded clickable" onclick="openModal('🌟 奨学金補助制度', scholarshipDetails)">
+                        <div class="font-sf text-lg text-yellow-300">奨学金補助</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="playNavSound(); changePage(4)" class="btn">＜ 戻る</button>
+            <button onclick="playNavSound(); changePage(6)" class="btn">次のフェーズへ ＞</button>
+        </div>
+    </div>
+    
+    <!-- Page 6: Life Plan Simulator (NEW) -->
+    <div id="page-6" class="page">
+        <div class="content-container">
+            <h2 class="text-3xl">🏡 Phase 5: Life Plan Simulator</h2>
+            <p class="mb-6 text-center">君の未来をシミュレートしよう。<br>ライフイベントを選択すると、関連する福利厚生制度がハイライトされる。</p>
+            <div class="flex justify-center gap-2 md:gap-4 mb-8">
+                <button class="btn text-sm" onclick="simulateLifePlan('livingAlone')">🏠 一人暮らし</button>
+                <button class="btn text-sm" onclick="simulateLifePlan('marriage')">💒 結婚</button>
+                <button class="btn text-sm" onclick="simulateLifePlan('childbirth')">🍼 子供が生まれた</button>
+            </div>
+            <div id="benefit-list" class="space-y-3 text-sm">
+                <div id="benefit-shataku" class="benefit-item"><strong>借り上げ社宅制度:</strong> 会社都合での赴任・転勤時、家賃の7割を会社が負担。</div>
+                <div id="benefit-jutaku" class="benefit-item"><strong>住宅手当:</strong> 持ち家や自己契約の賃貸住宅に住む社員への手当。</div>
+                <div id="benefit-kazoku" class="benefit-item"><strong>家族手当:</strong> 配偶者やお子様がいる社員への手当。</div>
+                <div id="benefit-kekkon" class="benefit-item"><strong>結婚祝い金:</strong> 社員が結婚した際に支給されるお祝い金。</div>
+                <div id="benefit-shussan" class="benefit-item"><strong>出産祝い金:</strong> 社員またはその配偶者が出産した際に支給されるお祝い金。</div>
+                <div id="benefit-ikukyu" class="benefit-item"><strong>育児休暇後の短時間勤務制度:</strong> 3歳未満のお子様がいる場合、勤務時間を短縮できる制度。</div>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="playNavSound(); changePage(5)" class="btn">＜ 戻る</button>
+            <button onclick="playNavSound(); changePage(7)" class="btn">最終フェーズへ ＞</button>
+        </div>
+    </div>
+
+    <!-- Page 7: Final Phase -->
+    <div id="page-7" class="page">
+        <div class="content-container text-center">
+            <h2 class="text-3xl">🚀 Final Phase: Join Project</h2>
+            <p class="mb-6">基本シミュレーションは完了した。君の能力は確認済みだ。<br>今度は、君が我々を評価する番だ。詳細なプロジェクトデータや、先輩技術者たちの活動記録にアクセスし、最終的な判断を下してほしい。</p>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
+                <a href="https://job.mynavi.jp/27/pc/search/corp82951/outline.html" target="_blank" class="btn" onclick="playItemSound()">プロジェクト本登録へ (マイナビ)</a>
+                <a href="https://www.instagram.com/infratec_recruit/" target="_blank" class="btn" onclick="playItemSound()">活動ログを見る (Instagram)</a>
+            </div>
+            <div id="game-container">
+                 <p class="text-sm mb-2">最終適性テスト: 精密ブロック配置</p>
+                 <button id="start-game-btn" onclick="startGame()" class="text-blue-400 text-sm hover:underline">▶ テストを開始</button>
+                 <div id="game-wrapper" class="relative mx-auto" style="width: 300px; height: 600px;">
+                    <canvas id="game-canvas" width="300" height="600" class="absolute top-0 left-0"></canvas>
+                    <div id="game-over-screen" class="hidden absolute inset-0 bg-black/70 flex-col justify-center items-center">
+                         <p id="game-over-text" class="text-red-500 font-sf text-2xl mb-2"></p>
+                         <p id="final-score" class="text-white font-sf text-xl mb-4"></p>
+                         <button id="restart-btn" onclick="startGame()" class="btn">もう一度挑戦</button>
+                    </div>
+                 </div>
+            </div>
+        </div>
+        <div class="nav-buttons">
+             <button onclick="playNavSound(); changePage(1)" class="btn">＜ ログアウト</button>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="modal-title" class="font-sf text-blue-300 text-2xl mb-4"></h3>
+            <div id="modal-text" class="text-base"></div>
+            <button onclick="closeModal()" class="btn mt-6">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const navClickSound = document.getElementById('nav-click-sound');
+        const itemClickSound = document.getElementById('item-click-sound');
+        const backgroundMusic = document.getElementById('background-music');
+        const muteBtn = document.getElementById('mute-btn');
+        const volumeSlider = document.getElementById('volume-slider');
+
+        // --- Sound Functions ---
+        function playNavSound() {
+            navClickSound.pause();
+            navClickSound.currentTime = 0;
+            navClickSound.play().catch(e => {});
+        }
+
+        function playItemSound() {
+            itemClickSound.pause();
+            itemClickSound.currentTime = 0;
+            itemClickSound.play().catch(e => {});
+        }
+        
+        let musicStarted = false;
+        function startMusic() {
+            if (!musicStarted) {
+                backgroundMusic.play().catch(e => {});
+                musicStarted = true;
+            }
+        }
+        document.body.addEventListener('click', startMusic, { once: true });
+        document.body.addEventListener('keydown', startMusic, { once: true });
+
+        // --- Page Navigation ---
+        function changePage(pageNumber) {
+            const currentPageElement = document.getElementById(`page-${currentPage}`);
+            if (currentPageElement) currentPageElement.classList.remove('active');
+
+            const newPageElement = document.getElementById(`page-${pageNumber}`);
+            if (newPageElement) newPageElement.classList.add('active');
+            
+            currentPage = pageNumber;
+            
+            if (currentPage === 5) {
+                animateData();
+            }
+            if(currentPage === 7) { 
+                document.getElementById('game-container').style.display = 'block';
+            }
+        }
+        
+        // --- Modal Logic ---
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+
+        function openModal(title, content) {
+            playItemSound();
+            modalTitle.innerHTML = title; 
+            modalText.innerHTML = content.replace(/\n/g, '<br>');
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            playItemSound();
+            modal.classList.remove('active');
+        }
+
+        // --- Modal Content Definitions ---
+        const salaryDetails = `
+            <p class='text-sm mb-4'>カードをタップして詳細を確認</p>
+            <div class='card-container'>
+                <div class='card' onclick='playItemSound(); this.classList.toggle("is-flipped")'>
+                    <div class='card-inner'>
+                        <div class='card-face font-sf flex-col'>
+                            <p class='text-lg'>大学院了</p>
+                            <p class='text-xs mt-2'>(タップで詳細)</p>
+                        </div>
+                        <div class='card-face card-back'>
+                            <ul class='list-none text-left space-y-1'>
+                                <li>月給: <strong class='text-yellow-300'>259,463円</strong></li>
+                                <li>基本月額: 224,400円</li>
+                                <li>職種手当: 35,063円</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class='card' onclick='playItemSound(); this.classList.toggle("is-flipped")'>
+                    <div class='card-inner'>
+                        <div class='card-face font-sf flex-col'>
+                            <p class='text-lg'>大学・高専卒</p>
+                            <p class='text-xs mt-2'>(タップで詳細)</p>
+                        </div>
+                        <div class='card-face card-back'>
+                             <ul class='list-none text-left space-y-1'>
+                                <li>月給: <strong class='text-yellow-300'>248,594円</strong></li>
+                                <li>基本月額: 215,000円</li>
+                                <li>職種手当: 33,594円</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class='card' onclick='playItemSound(); this.classList.toggle("is-flipped")'>
+                    <div class='card-inner'>
+                        <div class='card-face font-sf flex-col'>
+                            <p class='text-lg'>短大・専門卒</p>
+                            <p class='text-xs mt-2'>(タップで詳細)</p>
+                        </div>
+                        <div class='card-face card-back'>
+                             <ul class='list-none text-left space-y-1'>
+                                <li>月給: <strong class='text-yellow-300'>234,025円</strong></li>
+                                <li>基本月額: 202,400円</li>
+                                <li>職種手当: 31,625円</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class='text-xs mt-4 opacity-80'>※職種手当は時間外労働の有無にかかわらず22時間分の固定残業代として支給。超過分は別途支給します。</p>
+        `;
+        const allowanceDetails = `
+            <ul class='list-disc list-inside'>
+                <li>通勤手当</li>
+                <li>資格手当</li>
+                <li>家族手当</li>
+                <li>住宅手当</li>
+                <li>役職手当</li>
+                <li>勤務地手当</li>
+            </ul>
+        `;
+        const locationAllowanceDetails = `
+            <div class='space-y-2 text-sm'>
+                <p>🏙️ <strong class='text-blue-400'>【東京】</strong> <span class='text-yellow-300'>35,000円</span></p>
+                <p>🏯 <strong class='text-blue-400'>【大阪・仙台】</strong> <span class='text-yellow-300'>25,000円</span></p>
+                <p>🍵 <strong class='text-blue-400'>【京都・名古屋】</strong> <span class='text-yellow-300'>21,000円</span></p>
+                <p>🍁 <strong class='text-blue-400'>【広島・静岡・三重】</strong> <span class='text-yellow-300'>18,000円</span></p>
+                <p>🍜 <strong class='text-blue-400'>【福岡・奄美・岡山・滋賀・兵庫・和歌山】</strong> <span class='text-yellow-300'>14,000円</span></p>
+                <p>🌋 <strong class='text-blue-400'>【鹿児島 ほか】</strong> なし</p>
+            </div>
+        `;
+        const miscDetails = `
+             <div class='space-y-4'>
+                <div>
+                    <h4 class='font-bold text-blue-400'>  昇給・賞与</h4>
+                    <p class='text-sm'>昇給：年1回(4月)<br>賞与：年2回(7月, 12月)</p>
+                </div>
+            </div>
+        `;
+         const holidayDetails = `
+             <div class='space-y-4'>
+                <div>
+                    <h4 class='font-bold text-blue-400'>🌴 休日休暇</h4>
+                    <p class='text-sm'>完全週休2日制<br><strong class='text-yellow-300 text-lg'>年間休日125日</strong></p>
+                </div>
+            </div>
+        `;
+        const scholarshipDetails = `
+            <p>当社では、社員の経済的負担を軽減し、安心して業務に集中できる環境を提供するため、奨学金補助制度を導入しています。</p>
+            <p class='font-bold text-yellow-300 my-4 text-center text-lg'>月々の奨学金返済額を補助する制度です！</p>
+            <p class='text-xs opacity-80'>※規定有り。詳細は会社説明会などでご確認ください。</p>
+        `;
+
+        // --- Page 1 Animation ---
+        window.onload = () => {
+            const loginTextEl = document.getElementById('login-text');
+            const lines = [
+                '> Booting VR System...',
+                '> Kernel OK. Drivers OK.',
+                '> Connecting to INFRATEC Central Server...',
+                '> Connection Established.',
+                '> Welcome, Candidate.',
+                '> Initializing Simulation: "INFRA-BUILD 202X"',
+                '> Press "ENTER" to begin.'
+            ];
+            let lineIndex = 0;
+            let charIndex = 0;
+
+            function typeLine() {
+                if (lineIndex >= lines.length) {
+                    const enterBtn = document.createElement('button');
+                    enterBtn.textContent = 'ENTER';
+                    enterBtn.className = 'btn mt-4';
+                    enterBtn.onclick = () => { playNavSound(); changePage(2); };
+                    loginTextEl.appendChild(enterBtn);
+                    document.getElementById('cursor').style.display = 'none';
+                    return;
+                }
+                if (charIndex < lines[lineIndex].length) {
+                    loginTextEl.innerHTML += lines[lineIndex].charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeLine, 30);
+                } else {
+                    loginTextEl.innerHTML += '<br>';
+                    lineIndex++;
+                    charIndex = 0;
+                    setTimeout(typeLine, 500);
+                }
+            }
+            typeLine();
+
+            // Parallax effect
+            const pages = document.querySelectorAll('.page');
+            document.addEventListener('mousemove', (e) => {
+                const { clientX, clientY } = e;
+                const x = (clientX / window.innerWidth - 0.5) * -40;
+                const y = (clientY / window.innerHeight - 0.5) * -40;
+                pages.forEach(page => {
+                    const bg = page.querySelector('::before') || page;
+                     if(bg && bg.style) { // Check if bg and style exist
+                        bg.style.transform = `translate(${x}px, ${y}px)`;
+                     }
+                });
+            });
+
+            // --- Audio Controls Logic ---
+            const speakerOnIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M11.536 14.01A8.47 8.47 0 0 0 14.026 8a8.47 8.47 0 0 0-2.49-6.01l-.708.707A7.48 7.48 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303z"/><path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.48 5.48 0 0 1 11.025 8a5.48 5.48 0 0 1-1.61 3.89z"/><path d="M8.707 11.182A4.5 4.5 0 0 0 10.025 8a4.5 4.5 0 0 0-1.318-3.182L8 5.525A3.5 3.5 0 0 1 9.025 8 3.5 3.5 0 0 1 8 10.475zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06z"/></svg>`;
+            const speakerOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06zm7.137 2.096a.5.5 0 0 1 0 .708L12.207 8l1.647 1.646a.5.5 0 0 1-.708.708L11.5 8.707l-1.646 1.647a.5.5 0 0 1-.708-.708L10.793 8 9.146 6.354a.5.5 0 1 1 .708-.708L11.5 7.293l1.646-1.647a.5.5 0 0 1 .708 0z"/></svg>`;
+            
+            muteBtn.innerHTML = speakerOnIcon;
+            backgroundMusic.volume = 0.5;
+
+            muteBtn.addEventListener('click', () => {
+                backgroundMusic.muted = !backgroundMusic.muted;
+                updateMuteButton();
+                if (!backgroundMusic.muted) {
+                    startMusic();
+                }
+            });
+
+            volumeSlider.addEventListener('input', (e) => {
+                const newVolume = e.target.value / 100;
+                backgroundMusic.volume = newVolume;
+                if (newVolume > 0) backgroundMusic.muted = false;
+                updateMuteButton();
+            });
+
+            function updateMuteButton() {
+                 if (backgroundMusic.muted || backgroundMusic.volume === 0) {
+                    muteBtn.innerHTML = speakerOffIcon;
+                    if(backgroundMusic.volume === 0) volumeSlider.value = 0;
+                } else {
+                    muteBtn.innerHTML = speakerOnIcon;
+                }
+            }
+
+        };
+        
+        // --- Life Plan Simulator (Page 6) ---
+        function simulateLifePlan(plan) {
+            playItemSound();
+            const allBenefits = document.querySelectorAll('.benefit-item');
+            allBenefits.forEach(b => b.classList.remove('highlighted'));
+
+            const planMap = {
+                livingAlone: ['benefit-shataku', 'benefit-jutaku'],
+                marriage: ['benefit-shataku', 'benefit-jutaku', 'benefit-kazoku', 'benefit-kekkon'],
+                childbirth: ['benefit-kazoku', 'benefit-shussan', 'benefit-ikukyu']
+            };
+
+            if (planMap[plan]) {
+                planMap[plan].forEach(id => document.getElementById(id).classList.add('highlighted'));
+            }
+        }
+
+
+        // --- Data Animation Logic (Page 5) ---
+        function animateData() {
+            const counters = document.querySelectorAll('.counter');
+            counters.forEach(counter => {
+                const target = +counter.getAttribute('data-target');
+                let current = 0;
+                const updateCounter = () => {
+                    const increment = (target - current) / 20;
+                    if(current < target) {
+                        current += increment;
+                        if(target.toString().includes('.')) {
+                           counter.innerText = current.toFixed(1);
+                        } else {
+                           counter.innerText = Math.ceil(current);
+                        }
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        counter.innerText = target;
+                    }
+                };
+                updateCounter();
+            });
+        }
+        
+        // --- Infra-Builder Game Logic ---
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const gameOverText = document.getElementById('game-over-text');
+        const finalScoreText = document.getElementById('final-score');
+        
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+        
+        const COLORS = [null, '#ffab00', '#58a6ff', '#f778ba', '#3fb950', '#a371f7', '#d29922', '#c9d1d9'];
+        const SHAPES = [
+            [], // Empty
+            [[1,1,1,1]], // I
+            [[1,1,0],[0,1,1]], // Z
+            [[0,1,1],[1,1,0]], // S
+            [[1,1,1],[0,1,0]], // T
+            [[1,1,1],[1,0,0]], // L
+            [[1,1,1],[0,0,1]], // J
+            [[1,1],[1,1]]  // O
+        ];
+
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        let piece;
+        let score = 0;
+        let gameOver = false;
+        let dropCounter = 0;
+        let dropInterval = 1000; // ms
+        let lastTime = 0;
+        let animationFrameId;
+
+        function startGame() {
+            playItemSound();
+            startGameBtn.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            canvas.style.display = 'block';
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
+            board.forEach(row => row.fill(0));
+            score = 0;
+            dropInterval = 1000;
+            gameOver = false;
+            piece = new Piece(ctx);
+            
+            lastTime = 0;
+            gameLoop(0);
+        }
+        
+        class Piece {
+            constructor(ctx) {
+                this.ctx = ctx;
+                const typeId = Math.floor(Math.random() * (SHAPES.length - 1)) + 1;
+                this.shape = SHAPES[typeId];
+                this.color = COLORS[typeId];
+                this.x = Math.floor(COLS / 2) - Math.floor(this.shape[0].length / 2);
+                this.y = 0;
+            }
+            draw() {
+                this.ctx.fillStyle = this.color;
+                this.shape.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value > 0) {
+                            this.ctx.fillRect((this.x + x) * BLOCK_SIZE, (this.y + y) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                        }
+                    });
+                });
+            }
+            move(p) {
+                this.x = p.x;
+                this.y = p.y;
+                this.shape = p.shape;
+            }
+        }
+
+        function pieceDrop() {
+            const p = { ...piece };
+            p.y++;
+            if (isValid(p)) {
+                piece.move(p);
+            } else {
+                freeze();
+                clearLines();
+                if (gameOver) return;
+                piece = new Piece(ctx);
+            }
+        }
+        
+        function freeze() {
+            piece.shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value > 0) {
+                        if (piece.y + y < 0) {
+                            gameOver = true;
+                            return;
+                        }
+                        board[piece.y + y][piece.x + x] = COLORS.indexOf(piece.color);
+                    }
+                });
+            });
+        }
+        
+        function clearLines() {
+            let linesCleared = 0;
+            board.forEach((row, y) => {
+                if (row.every(value => value > 0)) {
+                    linesCleared++;
+                    board.splice(y, 1);
+                    board.unshift(Array(COLS).fill(0));
+                }
+            });
+            if (linesCleared > 0) {
+                 score += linesCleared * 10 * linesCleared; // Bonus for multi-line clears
+                 dropInterval = Math.max(200, dropInterval - 50); // Speed up
+            }
+        }
+        
+        function drawBoard() {
+             board.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value > 0) {
+                        ctx.fillStyle = COLORS[value];
+                        ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                });
+            });
+        }
+        
+        function isValid(p) {
+            return p.shape.every((row, dy) => {
+                return row.every((value, dx) => {
+                    let x = p.x + dx;
+                    let y = p.y + dy;
+                    return (
+                        value === 0 ||
+                        (x >= 0 && x < COLS && y < ROWS && board[y] && board[y][x] === 0)
+                    );
+                });
+            });
+        }
+
+        function rotate(shape) {
+            const newShape = shape[0].map((_, colIndex) => shape.map(row => row[colIndex]).reverse());
+            return newShape;
+        }
+        
+        function handleKeyDown(e) {
+            e.preventDefault();
+            const p = { ...piece };
+            if (e.key === "ArrowLeft")  p.x--;
+            if (e.key === "ArrowRight") p.x++;
+            if (e.key === "ArrowDown")  p.y++;
+            if (e.key === "ArrowUp") p.shape = rotate(p.shape);
+
+            if(isValid(p)){
+                piece.move(p);
+            }
+        }
+
+        // --- Touch controls ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchThreshold = 30; // Min pixels to count as a swipe
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
+            if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) { // Tap
+                const p = { ...piece };
+                p.shape = rotate(p.shape);
+                if (isValid(p)) piece.move(p);
+            } else if (Math.abs(deltaX) > Math.abs(deltaY)) { // Horizontal swipe
+                const p = { ...piece };
+                p.x += (deltaX > 0) ? 1 : -1;
+                 if (isValid(p)) piece.move(p);
+            } else if (deltaY > touchThreshold) { // Downward swipe
+                const p = { ...piece };
+                p.y++;
+                if (isValid(p)) piece.move(p);
+            }
+        }, { passive: false });
+
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        function gameLoop(time) {
+            if (gameOver) {
+                gameOverScreen.style.display = 'flex';
+                gameOverText.textContent = `GAME OVER`;
+                finalScoreText.textContent = `SCORE: ${score}`;
+                return;
+            }
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+
+            if (dropCounter > dropInterval) {
+                pieceDrop();
+                dropCounter = 0;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBoard();
+            piece.draw();
+
+            ctx.fillStyle = '#58a6ff';
+            ctx.font = '16px Orbitron';
+            ctx.fillText('Score: ' + score, 10, 20);
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        const startGameBtnEl = document.getElementById('start-game-btn');
+        const gameWrapper = document.getElementById('game-wrapper');
+
+        function startGame() {
+            playItemSound();
+            startGameBtnEl.style.display = 'none';
+            gameWrapper.style.display = 'block';
+            gameOverScreen.style.display = 'none';
+            
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
+            board.forEach(row => row.fill(0));
+            score = 0;
+            dropInterval = 1000;
+            gameOver = false;
+            piece = new Piece(ctx);
+            
+            lastTime = 0;
+            gameLoop(0);
+        }
+    </script>
+</body>
+</html>
+ 
